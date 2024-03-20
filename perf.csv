@@ -1,0 +1,10 @@
+main,./programs/c2.hvmc,interpreted,5.087µs,23,inf M
+main,./programs/c2.hvmc,compiled,27.594µs,23,inf M
+42d5ad1,./programs/c2.hvmc,interpreted,3.400µs,11,inf M
+42d5ad1,./programs/c2.hvmc,compiled,4.540µs,11,inf M
+460e3cc,./programs/c2.hvmc,interpreted,0.000 s,12,inf m
+460e3cc,./programs/c2.hvmc,compiled,0.000 s,12,inf m
+a516b27,./programs/c2.hvmc,interpreted,0.000 s,17,inf m
+a516b27,./programs/c2.hvmc,compiled,0.000 s,17,inf m
+fb5a2a98d4ec19e4b4a4898a8124fa4a76f87ee1,./programs/c2.hvmc,interpreted,,,
+fb5a2a98d4ec19e4b4a4898a8124fa4a76f87ee1,./programs/c2.hvmc,compiled,0.000 s,17,inf m

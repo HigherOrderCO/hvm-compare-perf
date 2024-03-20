@@ -6,29 +6,32 @@ use std::{
     fs::{self, File},
     io::{stderr, Read},
     path::{Path, PathBuf},
-    process::{Command, Stdio},
+    process::{Command, Stdio}, time::Duration,
 };
 
 use regex::Regex;
 
 pub type Result<T> = core::result::Result<T, Box<dyn Error>>;
 
+const MAX_TIME: Duration = Duration::from_secs(120);
+
 // const COMMIT_MODERN: &str = "09a3791cd8194fef28be95305835d4851eb0a854";
 // const COMMIT_POST_PTR: &str = "9bdbdcbe0816345545a3adf00704f9f4f01dcfe7";
 // const COMMIT_PRE_PTR: &str = "c610b490fb071b7c9891b674bf399addaff3a580";
 
+
+
 pub fn main() -> Result<()> {
+    let file = fs::read(env!("CARGO_MANIFEST_DIR").to_string() + "/commits.cfg")?;
+    let file = std::str::from_utf8(&file)?;
+    let commits: Vec<&str> = file.split("\n").collect();
     let mut state = State {
         crate_dir: "./.bench-dir".into(),
         git_dir: "./.bench-dir".into(),
         re_time: Regex::new("TIME *: *(.+)")?,
         re_rwts: Regex::new("RWTS *: *(.+)")?,
         re_rwps: Regex::new("RPS *: *(.+)")?,
-        commits: &[
-            "main", 
-            /*"42d5ad1", // */"9bdbdcbe0816345545a3adf00704f9f4f01dcfe7",
-            /*"3769d7f", // */"c610b490fb071b7c9891b674bf399addaff3a580",
-        ],
+        commits: &commits,
     };
     state.init()?;
     let stats = state.perf_all()?;
@@ -59,6 +62,12 @@ pub struct Stats {
     time: Option<String>,
     rwts: Option<String>,
     rwps: Option<String>,
+}
+
+impl Stats {
+    fn show_short(&self) -> String {
+        format!("{time} @ {rwps} rps", time = self.time.as_ref().map(|x| x.as_ref()).unwrap_or("???"), rwps = &self.rwps.as_ref().map(|x| x.as_ref()).unwrap_or("???"))
+    }
 }
 impl Stats {
     fn to_csv(&self) -> String {
@@ -108,31 +117,76 @@ impl<'a> State<'a> {
         let mut results = vec![];
         for file in fs::read_dir("./programs/").unwrap() {
             let file = file?.path();
-            results.extend(self.perf_file(file)?);
+            if file.extension().is_some_and(|x| x.to_string_lossy() == "hvmc") {
+                results.extend(self.perf_file(&file)?);
+            }
         }
         results
             .iter_mut()
             .for_each(|x| x.hash = Some(hash.to_owned()));
         Ok(results)
     }
-    fn perf_file(&mut self, file: impl AsRef<Path>) -> Result<Vec<Stats>> {
-        eprintln!(">> file {file}", file = file.as_ref().to_str().unwrap());
-        let file = {
+    fn perf_file(&mut self, file: &Path) -> Result<Vec<Stats>> {
+        eprintln!(">> file {file}", file = file.to_string_lossy());
+        let mut results = vec![];
+        results.extend(self.perf_interpreted(file)?);
+        results.extend(self.perf_compiled(file)?);
+        results
+            .iter_mut()
+            .for_each(|x| x.file = Some(file.to_string_lossy().into_owned()));
+        Ok(results)
+    }
+    fn perf_compiled(&mut self, file: &Path) -> Result<Vec<Stats>> {
+        eprintln!(">>> mode compiled");
+        let file_relative_to_cargo = {
             let mut p = PathBuf::from("..");
             p.push(file);
-            p.to_str().unwrap().to_owned()
+            p
         };
         let mut command = self.create_command_cargo_run();
-        command.arg("run");
+        command.arg("compile").arg(&file_relative_to_cargo);
+        let out = self.run_and_capture_stdout_err(&mut command)?;
+
+        let binary = file.with_extension("");
+        let mut command = Command::new(&binary);
+        command.arg("-s").arg("-1");
+
         if self.is_git_ancestor("0ba064c", "HEAD")? {
             command.arg("-m").arg("4G");
         }
-        command.arg(&file).arg("-1").arg("-s");
+
         let out = self.run_and_capture_stdout_err(&mut command)?;
-        let mut results = vec![self.parse_output(&out.1)?];
+        let result = self.parse_output(&out)?;
+        eprintln!(">>>> {}", result.show_short());
+        let mut results = vec![result];
         results
             .iter_mut()
-            .for_each(|x| x.file = Some(file.to_owned()));
+            .for_each(|x| x.mode = Some("compiled".to_owned()));
+        Ok(results)
+    }
+    fn perf_interpreted(&mut self, file: &Path) -> Result<Vec<Stats>> {
+        eprintln!(">>> mode interpreted");
+        let file = {
+            let mut p = PathBuf::from("..");
+            p.push(file);
+            p
+        };
+        let mut command = self.create_command_cargo_run();
+        command.arg("run");
+
+        if self.is_git_ancestor("0ba064c", "HEAD")? {
+            command.arg("-m").arg("4G");
+        }
+        command.arg(&file).arg("-s").arg("-1");
+
+        let out = self.run_and_capture_stdout_err(&mut command)?;
+
+        let result = self.parse_output(&out)?;
+        eprintln!(">>>> {}", result.show_short());
+        let mut results = vec![result];
+        results
+            .iter_mut()
+            .for_each(|x| x.mode = Some("interpreted".to_owned()));
         Ok(results)
     }
     fn parse_output(&mut self, s: &str) -> Result<Stats> {
@@ -185,19 +239,34 @@ impl<'a> State<'a> {
             .arg(descendant);
         Ok(c.spawn()?.wait()?.success())
     }
-    fn run_and_capture_stdout_err(&mut self, command: &mut Command) -> Result<(String, String)> {
+    fn run_and_capture_stdout_err(&mut self, command: &mut Command) -> Result<String> {
         let mut cmd = command
             .stderr(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()?;
 
+        use wait_timeout::ChildExt;
+
         let stdout = cmd.stdout.take();
         let stderr = cmd.stderr.take();
-        cmd.wait()?;
-        let mut stdout_ = String::new();
-        stdout.unwrap().read_to_string(&mut stdout_)?;
-        let mut stderr_ = String::new();
-        stderr.unwrap().read_to_string(&mut stderr_)?;
-        Ok((stdout_, stderr_))
+        let exit = cmd.wait_timeout(MAX_TIME)?;
+        let mut output = String::new();
+        if let Some(exit) = exit {
+            stdout.unwrap().read_to_string(&mut output)?;
+            stderr.unwrap().read_to_string(&mut output)?;
+            if !exit.success() {
+                eprintln!(">>>> warn: exit status {:?}", exit);
+                eprintln!(">>>>> {:?}", output);
+            } else {
+                eprintln!(">>>> ok");
+            }
+        } else {
+            eprintln!(">>>> warn: timeout");
+            cmd.kill()?;
+            stdout.unwrap().read_to_string(&mut output)?;
+            stderr.unwrap().read_to_string(&mut output)?;
+            eprintln!(">>>> killed");
+        }
+        Ok(output)
     }
 }
