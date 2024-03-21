@@ -52,11 +52,11 @@ def pretty_plaintext_format(data) -> str:
 			s += f" " * 12
 		for i in v:
 			if k[2] == "rwts":
-				s += f"{i / 10**6:6.1f} MRPS "
+				s += f"{i / 10**6:9.3f} M "
 			elif k[2] == "rwps":
-				s += f"{i / 10**6:8.3f} MR "
+				s += f"{i / 10**6:9.3f} M "
 			elif k[2] == "time":
-				s += f"{i:9.6f} s "
+				s += f"{i:9.3f} s "
 		s += "\n"
 		old_k = k
 
