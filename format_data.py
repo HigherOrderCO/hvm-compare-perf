@@ -19,9 +19,48 @@ index = pd.MultiIndex.from_frame(data[["hash", "file", "mode"]], names = ["hash"
 data = pd.Series([tuple(row) for row in data[["rwts", "rwps", "time"]].to_numpy()], index = index)
 data = pd.DataFrame(list(data), columns = ["rwts", "rwps", "time"], index = index)
 data = data.stack(future_stack=True)
+#data.drop("c2", level = "file")
 data = data.unstack(level="hash")
-data = data.xs("time", level=2)
-pd.set_option('display.max_colwidth',1000)
-pd.set_option('display.max_columns', 7)
-import sys
-data.to_csv(sys.stdout)
+
+def pretty_plaintext_format(data) -> str:
+	s = ""
+	s += f"{'file':11} {'mode':11} {'stat':4} "
+	for k in data.columns:
+		s += f"{k[:11]:11} "
+	s += "\n"
+	s += "=" * 100 + "\n"
+
+	old_k = None
+
+	for (k, v) in data.iterrows():
+		if old_k:
+			if old_k[0] != k[0]:
+				s += "=" * 100 + "\n"
+			elif old_k[1] != k[1]:
+				s += "-" * 100 + "\n"
+		if not old_k or old_k[0] != k[0]:
+			s += f"{k[0][:11]:11} "
+		else:
+			s += f" " * 12
+		if not old_k or old_k[1] != k[1]:
+			s += f"{k[1][:11]:11} "
+		else:
+			s += f" " * 12
+		if not old_k or old_k[2] != k[2]:
+			s += f"{k[2][:4]:4} "
+		else:
+			s += f" " * 12
+		for i in v:
+			if k[2] == "rwts":
+				s += f"{i / 10**6:6.1f} MRPS "
+			elif k[2] == "rwps":
+				s += f"{i / 10**6:8.3f} MR "
+			elif k[2] == "time":
+				s += f"{i:9.6f} s "
+		s += "\n"
+		old_k = k
+
+	return s
+
+
+print(pretty_plaintext_format(data))
