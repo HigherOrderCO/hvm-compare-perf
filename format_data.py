@@ -50,13 +50,28 @@ def pretty_plaintext_format(data) -> str:
 			s += f"{k[2][:4]:4} "
 		else:
 			s += f" " * 12
-		for i in v:
+
+		if k[2] == "rwps":
+			# higher is better
+			key = lambda i: -v.iloc[i]
+		else:
+			key = lambda i: v.iloc[i]
+		order = list(sorted(range(5), key = key))
+		for idx, i in enumerate(v):
+			s += [
+				"\x1b[1;32m",
+				"\x1b[32m",
+				"",
+				"\x1b[31m",
+				"\x1b[1;31m"
+			][order.index(idx)]
 			if k[2] == "rwts":
 				s += f"{i / 10**6:9.3f} M "
 			elif k[2] == "rwps":
 				s += f"{i / 10**6:9.3f} M "
 			elif k[2] == "time":
 				s += f"{i:9.3f} s "
+			s += "\x1b[0m"
 		s += "\n"
 		old_k = k
 
