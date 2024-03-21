@@ -26,8 +26,8 @@ pub fn main() -> Result<()> {
     let file = std::str::from_utf8(&file)?;
     let commits: Vec<&str> = file.split("\n").collect();
     let mut state = State {
-        crate_dir: "./.bench-dir".into(),
-        git_dir: "./.bench-dir".into(),
+        crate_dir: "./hvm-core".into(),
+        git_dir: "./hvm-core".into(),
         re_time: Regex::new("TIME *: *(.+)")?,
         re_rwts: Regex::new("RWTS *: *(.+)")?,
         re_rwps: Regex::new("RPS *: *(.+)")?,
@@ -38,6 +38,7 @@ pub fn main() -> Result<()> {
 
     let mut file = File::create("perf.csv")?;
     use std::io::Write;
+    writeln!(&mut file, "hash,file,mode,time,rwts,rwps")?;
     for stat in stats {
         writeln!(&mut file, "{}", stat.to_csv())?;
     }
@@ -143,22 +144,39 @@ impl<'a> State<'a> {
             p.push(file);
             p
         };
+
+        let binary = file.with_extension("");
+
+        if binary.exists() {
+            fs::remove_file(&binary)?;
+        }
+
         let mut command = self.create_command_cargo_run();
         command.arg("compile").arg(&file_relative_to_cargo);
         let out = self.run_and_capture_stdout_err(&mut command)?;
 
-        let binary = file.with_extension("");
-        let mut command = Command::new(&binary);
-        command.arg("-s").arg("-1");
+        let mut results = if binary.exists() {
+            let mut command = Command::new(&binary);
+            // if ptr-refactor hasn't been implemented, pass dummy arg
+            if !self.is_git_ancestor("9bdbdcbe0816345545a3adf00704f9f4f01dcfe7", "HEAD")? {
+                command.arg("_");
+            }
+            command.arg("-s").arg("-1");
 
-        if self.is_git_ancestor("0ba064c", "HEAD")? {
-            command.arg("-m").arg("4G");
+            if self.is_git_ancestor("0ba064c", "HEAD")? {
+                command.arg("-m").arg("4G");
+            }
+
+            let out = self.run_and_capture_stdout_err(&mut command)?;
+            let result = self.parse_output(&out)?;
+            eprintln!(">>>> {}", result.show_short());
+            vec![result]
+        } else {
+            vec![]
+        };
+        if binary.exists() {
+            fs::remove_file(&binary)?;
         }
-
-        let out = self.run_and_capture_stdout_err(&mut command)?;
-        let result = self.parse_output(&out)?;
-        eprintln!(">>>> {}", result.show_short());
-        let mut results = vec![result];
         results
             .iter_mut()
             .for_each(|x| x.mode = Some("compiled".to_owned()));

@@ -1,10 +1,79 @@
-main,./programs/c2.hvmc,interpreted,5.087µs,23,inf M
-main,./programs/c2.hvmc,compiled,27.594µs,23,inf M
-42d5ad1,./programs/c2.hvmc,interpreted,3.400µs,11,inf M
-42d5ad1,./programs/c2.hvmc,compiled,4.540µs,11,inf M
-460e3cc,./programs/c2.hvmc,interpreted,0.000 s,12,inf m
-460e3cc,./programs/c2.hvmc,compiled,0.000 s,12,inf m
-a516b27,./programs/c2.hvmc,interpreted,0.000 s,17,inf m
-a516b27,./programs/c2.hvmc,compiled,0.000 s,17,inf m
-fb5a2a98d4ec19e4b4a4898a8124fa4a76f87ee1,./programs/c2.hvmc,interpreted,,,
-fb5a2a98d4ec19e4b4a4898a8124fa4a76f87ee1,./programs/c2.hvmc,compiled,0.000 s,17,inf m
+hash,file,mode,time,rwts,rwps
+compare-1-single-core-flag,./programs/radix_sort_lam.hvmc,interpreted,,,
+compare-1-single-core-flag,./programs/bitonic_sort_lam.hvmc,interpreted,24.375 s,811597752,33.296 m
+compare-1-single-core-flag,./programs/bitonic_sort_lam.hvmc,compiled,12.248 s,811597752,66.264 m
+compare-1-single-core-flag,./programs/c2.hvmc,interpreted,0.000 s,17,inf m
+compare-1-single-core-flag,./programs/c2.hvmc,compiled,0.000 s,17,inf m
+compare-1-single-core-flag,./programs/sum_tail.hvmc,interpreted,2.539 s,110000008,43.324 m
+compare-1-single-core-flag,./programs/sum_tail.hvmc,compiled,1.871 s,110000008,58.792 m
+compare-1-single-core-flag,./programs/merge_sort.hvmc,interpreted,15.700 s,494927834,31.524 m
+compare-1-single-core-flag,./programs/merge_sort.hvmc,compiled,9.000 s,494927834,54.992 m
+compare-1-single-core-flag,./programs/sum_rec.hvmc,interpreted,31.794 s,1207959540,37.993 m
+compare-1-single-core-flag,./programs/sum_rec.hvmc,compiled,19.961 s,1207959540,60.516 m
+compare-1-single-core-flag,./programs/boom.hvmc,interpreted,11.784 s,268435822,22.780 m
+compare-1-single-core-flag,./programs/boom.hvmc,compiled,11.832 s,268435822,22.687 m
+compare-1-single-core-flag,./programs/sum_tree.hvmc,interpreted,26.637 s,754974690,28.343 m
+compare-1-single-core-flag,./programs/sum_tree.hvmc,compiled,16.066 s,754974690,46.992 m
+compare-2-before-dup-ref,./programs/radix_sort_lam.hvmc,interpreted,,,
+compare-2-before-dup-ref,./programs/bitonic_sort_lam.hvmc,interpreted,26.397 s,811597752,30.746 m
+compare-2-before-dup-ref,./programs/bitonic_sort_lam.hvmc,compiled,10.973 s,811597752,73.963 m
+compare-2-before-dup-ref,./programs/c2.hvmc,interpreted,0.000 s,17,inf m
+compare-2-before-dup-ref,./programs/c2.hvmc,compiled,0.000 s,17,inf m
+compare-2-before-dup-ref,./programs/sum_tail.hvmc,interpreted,2.655 s,110000008,41.431 m
+compare-2-before-dup-ref,./programs/sum_tail.hvmc,compiled,0.449 s,110000008,244.989 m
+compare-2-before-dup-ref,./programs/merge_sort.hvmc,interpreted,16.906 s,494927834,29.275 m
+compare-2-before-dup-ref,./programs/merge_sort.hvmc,compiled,7.392 s,494927834,66.955 m
+compare-2-before-dup-ref,./programs/sum_rec.hvmc,interpreted,37.479 s,1207959540,32.230 m
+compare-2-before-dup-ref,./programs/sum_rec.hvmc,compiled,6.612 s,1207959540,182.692 m
+compare-2-before-dup-ref,./programs/boom.hvmc,interpreted,12.033 s,268435822,22.308 m
+compare-2-before-dup-ref,./programs/boom.hvmc,compiled,11.977 s,268435822,22.413 m
+compare-2-before-dup-ref,./programs/sum_tree.hvmc,interpreted,27.463 s,754974690,27.491 m
+compare-2-before-dup-ref,./programs/sum_tree.hvmc,compiled,9.825 s,754974690,76.842 m
+compare-3-before-ptr-refactor,./programs/radix_sort_lam.hvmc,interpreted,26.400 s,803471375,30.435 m
+compare-3-before-ptr-refactor,./programs/radix_sort_lam.hvmc,compiled,9.701 s,803471375,82.824 m
+compare-3-before-ptr-refactor,./programs/bitonic_sort_lam.hvmc,interpreted,29.970 s,811597752,27.080 m
+compare-3-before-ptr-refactor,./programs/bitonic_sort_lam.hvmc,compiled,11.501 s,811597752,70.568 m
+compare-3-before-ptr-refactor,./programs/c2.hvmc,interpreted,0.000 s,12,inf m
+compare-3-before-ptr-refactor,./programs/c2.hvmc,compiled,0.000 s,12,inf m
+compare-3-before-ptr-refactor,./programs/sum_tail.hvmc,interpreted,2.901 s,110000008,37.918 m
+compare-3-before-ptr-refactor,./programs/sum_tail.hvmc,compiled,0.503 s,110000008,218.688 m
+compare-3-before-ptr-refactor,./programs/merge_sort.hvmc,interpreted,19.162 s,494927834,25.829 m
+compare-3-before-ptr-refactor,./programs/merge_sort.hvmc,compiled,7.703 s,494927834,64.251 m
+compare-3-before-ptr-refactor,./programs/sum_rec.hvmc,interpreted,41.637 s,1207959540,29.012 m
+compare-3-before-ptr-refactor,./programs/sum_rec.hvmc,compiled,7.067 s,1207959540,170.930 m
+compare-3-before-ptr-refactor,./programs/boom.hvmc,interpreted,4.713 s,167772332,35.598 m
+compare-3-before-ptr-refactor,./programs/boom.hvmc,compiled,3.516 s,167772332,47.717 m
+compare-3-before-ptr-refactor,./programs/sum_tree.hvmc,interpreted,31.187 s,754974690,24.208 m
+compare-3-before-ptr-refactor,./programs/sum_tree.hvmc,compiled,10.253 s,754974690,73.635 m
+compare-4-ptr-refactor,./programs/radix_sort_lam.hvmc,interpreted,14.858s,803_471_375,54.077 M
+compare-4-ptr-refactor,./programs/radix_sort_lam.hvmc,compiled,12.323s,803_471_375,65.201 M
+compare-4-ptr-refactor,./programs/bitonic_sort_lam.hvmc,interpreted,17.392s,811_597_752,46.665 M
+compare-4-ptr-refactor,./programs/bitonic_sort_lam.hvmc,compiled,14.789s,811_597_752,54.882 M
+compare-4-ptr-refactor,./programs/c2.hvmc,interpreted,4.925µs,11,inf M
+compare-4-ptr-refactor,./programs/c2.hvmc,compiled,7.425µs,11,inf M
+compare-4-ptr-refactor,./programs/sum_tail.hvmc,interpreted,2.701s,110_000_008,40.726 M
+compare-4-ptr-refactor,./programs/sum_tail.hvmc,compiled,2.463s,110_000_008,44.661 M
+compare-4-ptr-refactor,./programs/merge_sort.hvmc,interpreted,12.073s,494_927_834,40.995 M
+compare-4-ptr-refactor,./programs/merge_sort.hvmc,compiled,10.665s,494_927_834,46.407 M
+compare-4-ptr-refactor,./programs/sum_rec.hvmc,interpreted,28.278s,1_207_959_540,42.717 M
+compare-4-ptr-refactor,./programs/sum_rec.hvmc,compiled,25.851s,1_207_959_540,46.730 M
+compare-4-ptr-refactor,./programs/boom.hvmc,interpreted,4.737s,134_217_902,28.340 M
+compare-4-ptr-refactor,./programs/boom.hvmc,compiled,4.737s,134_217_902,28.340 M
+compare-4-ptr-refactor,./programs/sum_tree.hvmc,interpreted,16.366s,754_974_690,46.131 M
+compare-4-ptr-refactor,./programs/sum_tree.hvmc,compiled,14.136s,754_974_690,53.412 M
+compare-5-modern-ptr-refactor,./programs/radix_sort_lam.hvmc,interpreted,14.128s,787_218_431,55.720 M
+compare-5-modern-ptr-refactor,./programs/radix_sort_lam.hvmc,compiled,11.561s,787_218_431,68.098 M
+compare-5-modern-ptr-refactor,./programs/bitonic_sort_lam.hvmc,interpreted,17.412s,791_019_454,45.430 M
+compare-5-modern-ptr-refactor,./programs/bitonic_sort_lam.hvmc,compiled,14.518s,791_019_454,54.489 M
+compare-5-modern-ptr-refactor,./programs/c2.hvmc,interpreted,4.988µs,23,inf M
+compare-5-modern-ptr-refactor,./programs/c2.hvmc,compiled,5.583µs,23,inf M
+compare-5-modern-ptr-refactor,./programs/sum_tail.hvmc,interpreted,2.607s,100_000_010,38.373 M
+compare-5-modern-ptr-refactor,./programs/sum_tail.hvmc,compiled,2.329s,100_000_010,42.937 M
+compare-5-modern-ptr-refactor,./programs/merge_sort.hvmc,interpreted,12.127s,480_247_775,39.605 M
+compare-5-modern-ptr-refactor,./programs/merge_sort.hvmc,compiled,10.236s,480_247_775,46.918 M
+compare-5-modern-ptr-refactor,./programs/sum_rec.hvmc,interpreted,28.390s,1_140_850_679,40.186 M
+compare-5-modern-ptr-refactor,./programs/sum_rec.hvmc,compiled,25.080s,1_140_850_679,45.490 M
+compare-5-modern-ptr-refactor,./programs/boom.hvmc,interpreted,4.898s,134_217_908,27.403 M
+compare-5-modern-ptr-refactor,./programs/boom.hvmc,compiled,4.585s,134_217_908,29.273 M
+compare-5-modern-ptr-refactor,./programs/sum_tree.hvmc,interpreted,16.415s,738_197_477,44.971 M
+compare-5-modern-ptr-refactor,./programs/sum_tree.hvmc,compiled,14.219s,738_197_477,51.916 M
