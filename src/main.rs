@@ -130,15 +130,17 @@ impl<'a> State<'a> {
     fn perf_file(&mut self, file: &Path) -> Result<Vec<Stats>> {
         eprintln!(">> file {file}", file = file.to_string_lossy());
         let mut results = vec![];
-        results.extend(self.perf_interpreted(file)?);
-        results.extend(self.perf_compiled(file)?);
+        results.extend(self.perf_interpreted(file, false)?);
+        results.extend(self.perf_compiled(file, false)?);
+        results.extend(self.perf_interpreted(file, true)?);
+        results.extend(self.perf_compiled(file, true)?);
         results
             .iter_mut()
             .for_each(|x| x.file = Some(file.to_string_lossy().into_owned()));
         Ok(results)
     }
-    fn perf_compiled(&mut self, file: &Path) -> Result<Vec<Stats>> {
-        eprintln!(">>> mode compiled");
+    fn perf_compiled(&mut self, file: &Path, single: bool) -> Result<Vec<Stats>> {
+        eprintln!(">>> mode compiled, -1: {}", single);
         let file_relative_to_cargo = {
             let mut p = PathBuf::from("..");
             p.push(file);
@@ -161,7 +163,10 @@ impl<'a> State<'a> {
             if !self.is_git_ancestor("9bdbdcbe0816345545a3adf00704f9f4f01dcfe7", "HEAD")? {
                 command.arg("_");
             }
-            command.arg("-s").arg("-1");
+            command.arg("-s");
+            if single {
+                command.arg("-1");
+            }
 
             if self.is_git_ancestor("0ba064c", "HEAD")? {
                 command.arg("-m").arg("4G");
@@ -177,13 +182,14 @@ impl<'a> State<'a> {
         if binary.exists() {
             fs::remove_file(&binary)?;
         }
+        let mode = format!("comp-{}", if single { "singl" } else { "multi"});
         results
             .iter_mut()
-            .for_each(|x| x.mode = Some("compiled".to_owned()));
+            .for_each(|x| x.mode = Some(mode.clone()));
         Ok(results)
     }
-    fn perf_interpreted(&mut self, file: &Path) -> Result<Vec<Stats>> {
-        eprintln!(">>> mode interpreted");
+    fn perf_interpreted(&mut self, file: &Path, single: bool) -> Result<Vec<Stats>> {
+        eprintln!(">>> mode interpreted, -1: {}", single);
         let file = {
             let mut p = PathBuf::from("..");
             p.push(file);
@@ -195,16 +201,19 @@ impl<'a> State<'a> {
         if self.is_git_ancestor("0ba064c", "HEAD")? {
             command.arg("-m").arg("4G");
         }
-        command.arg(&file).arg("-s").arg("-1");
-
+        command.arg(&file).arg("-s");
+        if single {
+            command.arg("-1");
+        }
         let out = self.run_and_capture_stdout_err(&mut command)?;
 
         let result = self.parse_output(&out)?;
         eprintln!(">>>> {}", result.show_short());
         let mut results = vec![result];
+        let mode = format!("intr-{}", if single { "singl" } else { "multi"});
         results
             .iter_mut()
-            .for_each(|x| x.mode = Some("interpreted".to_owned()));
+            .for_each(|x| x.mode = Some(mode.clone()));
         Ok(results)
     }
     fn parse_output(&mut self, s: &str) -> Result<Stats> {
