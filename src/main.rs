@@ -2,11 +2,11 @@
 
 use std::{
     error::Error,
-    fmt::Arguments,
     fs::{self, File},
-    io::{stderr, Read},
+    io::Read,
     path::{Path, PathBuf},
-    process::{Command, Stdio}, time::Duration,
+    process::{Command, Stdio},
+    time::Duration,
 };
 
 use regex::Regex;
@@ -18,8 +18,6 @@ const MAX_TIME: Duration = Duration::from_secs(120);
 // const COMMIT_MODERN: &str = "09a3791cd8194fef28be95305835d4851eb0a854";
 // const COMMIT_POST_PTR: &str = "9bdbdcbe0816345545a3adf00704f9f4f01dcfe7";
 // const COMMIT_PRE_PTR: &str = "c610b490fb071b7c9891b674bf399addaff3a580";
-
-
 
 pub fn main() -> Result<()> {
     let file = fs::read(env!("CARGO_MANIFEST_DIR").to_string() + "/commits.cfg")?;
@@ -67,7 +65,11 @@ pub struct Stats {
 
 impl Stats {
     fn show_short(&self) -> String {
-        format!("{time} @ {rwps} rps", time = self.time.as_ref().map(|x| x.as_ref()).unwrap_or("???"), rwps = &self.rwps.as_ref().map(|x| x.as_ref()).unwrap_or("???"))
+        format!(
+            "{time} @ {rwps} rps",
+            time = self.time.as_ref().map(|x| x.as_ref()).unwrap_or("???"),
+            rwps = &self.rwps.as_ref().map(|x| x.as_ref()).unwrap_or("???")
+        )
     }
 }
 impl Stats {
@@ -118,7 +120,10 @@ impl<'a> State<'a> {
         let mut results = vec![];
         for file in fs::read_dir("./programs/").unwrap() {
             let file = file?.path();
-            if file.extension().is_some_and(|x| x.to_string_lossy() == "hvmc") {
+            if file
+                .extension()
+                .is_some_and(|x| x.to_string_lossy() == "hvmc")
+            {
                 results.extend(self.perf_file(&file)?);
             }
         }
@@ -131,23 +136,32 @@ impl<'a> State<'a> {
         eprintln!(">> file {file}", file = file.to_string_lossy());
         let mut results = vec![];
         results.extend(self.perf_interpreted(file, false)?);
-        results.extend(self.perf_compiled(file, false)?);
         results.extend(self.perf_interpreted(file, true)?);
-        results.extend(self.perf_compiled(file, true)?);
+        results.extend(self.with_compiled::<Vec<Stats>>(file, |this, binary| {
+            let mut results = vec![];
+            results.extend(this.perf_compiled(binary, false)?);
+            results.extend(this.perf_compiled(binary, true)?);
+            Ok(results)
+        })?);
         results
             .iter_mut()
             .for_each(|x| x.file = Some(file.to_string_lossy().into_owned()));
         Ok(results)
     }
-    fn perf_compiled(&mut self, file: &Path, single: bool) -> Result<Vec<Stats>> {
-        eprintln!(">>> mode compiled, -1: {}", single);
+
+    /// Run a function after compiling a HVMC file into a binary
+    fn with_compiled<T>(
+        &mut self,
+        file: &Path,
+        f: impl FnOnce(&mut Self, &Path) -> Result<T>,
+    ) -> Result<T> {
+        let binary = file.with_extension("");
+
         let file_relative_to_cargo = {
             let mut p = PathBuf::from("..");
             p.push(file);
             p
         };
-
-        let binary = file.with_extension("");
 
         if binary.exists() {
             fs::remove_file(&binary)?;
@@ -155,7 +169,18 @@ impl<'a> State<'a> {
 
         let mut command = self.create_command_cargo_run();
         command.arg("compile").arg(&file_relative_to_cargo);
-        let out = self.run_and_capture_stdout_err(&mut command)?;
+        let _ = self.run_and_capture_stdout_err(&mut command)?;
+
+        let result = f(self, &binary);
+
+        if binary.exists() {
+            fs::remove_file(&binary)?;
+        }
+
+        result
+    }
+    fn perf_compiled(&mut self, binary: &Path, single: bool) -> Result<Vec<Stats>> {
+        eprintln!(">>> mode compiled, -1: {}", single);
 
         let mut results = if binary.exists() {
             let mut command = Command::new(&binary);
@@ -177,15 +202,11 @@ impl<'a> State<'a> {
             eprintln!(">>>> {}", result.show_short());
             vec![result]
         } else {
+            eprintln(">>>> compile failed");
             vec![]
         };
-        if binary.exists() {
-            fs::remove_file(&binary)?;
-        }
-        let mode = format!("comp-{}", if single { "singl" } else { "multi"});
-        results
-            .iter_mut()
-            .for_each(|x| x.mode = Some(mode.clone()));
+        let mode = format!("comp-{}", if single { "singl" } else { "multi" });
+        results.iter_mut().for_each(|x| x.mode = Some(mode.clone()));
         Ok(results)
     }
     fn perf_interpreted(&mut self, file: &Path, single: bool) -> Result<Vec<Stats>> {
@@ -210,10 +231,8 @@ impl<'a> State<'a> {
         let result = self.parse_output(&out)?;
         eprintln!(">>>> {}", result.show_short());
         let mut results = vec![result];
-        let mode = format!("intr-{}", if single { "singl" } else { "multi"});
-        results
-            .iter_mut()
-            .for_each(|x| x.mode = Some(mode.clone()));
+        let mode = format!("intr-{}", if single { "singl" } else { "multi" });
+        results.iter_mut().for_each(|x| x.mode = Some(mode.clone()));
         Ok(results)
     }
     fn parse_output(&mut self, s: &str) -> Result<Stats> {
