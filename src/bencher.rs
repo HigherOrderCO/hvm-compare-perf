@@ -74,15 +74,16 @@ impl Bencher {
   }
 
   fn bench_rev_file(&self, rev: &str, file: &Path, data: &mut Vec<Datum>) -> Result<()> {
+    let hvmc = self.build(rev, file)?;
     for &mode in &self.config.modes {
       let stats = if mode.compiled {
-        if let Ok(binary) = self.compile::<Vec<Stats>>(rev, file) {
+        if let Ok(binary) = self.compile(rev, file, &hvmc) {
           report!(self, "{}", mode; self.bench_compiled(&binary, mode.multi)?).ok()
         } else {
           None
         }
       } else {
-        report!(self, "{}", mode; self.bench_interpreted(file, mode.multi)?).ok()
+        report!(self, "{}", mode; self.bench_interpreted(&hvmc, file, mode.multi)?).ok()
       };
       data.push(Datum {
         rev: rev.to_owned(),
@@ -94,7 +95,26 @@ impl Bencher {
     Ok(())
   }
 
-  fn compile<T>(&self, rev: &str, file: &Path) -> Result<PathBuf> {
+  fn build(&self, rev: &str, file: &Path) -> Result<PathBuf> {
+    let mut binary = self.bins_dir.clone();
+    binary.push(rev);
+    binary.push("hvmc");
+
+    let mut relative_file = PathBuf::from("..");
+    relative_file.push(file);
+
+    if !binary.exists() {
+      fs::create_dir_all(binary.parent().unwrap())?;
+      report!(self, "building"; {
+        self.run_and_capture_stdout_err(Command::new("cargo").current_dir(&self.core_dir).arg("build").arg("--release"))?;
+        fs::rename("./hvm-core/target/release/hvmc", &binary)?;
+      })?;
+    }
+
+    Ok(binary)
+  }
+
+  fn compile(&self, rev: &str, file: &Path, hvmc: &Path) -> Result<PathBuf> {
     let mut binary = self.bins_dir.clone();
     binary.push(rev);
     binary.push(file.file_name().unwrap());
@@ -106,9 +126,7 @@ impl Bencher {
     if !binary.exists() {
       fs::create_dir_all(binary.parent().unwrap())?;
       report!(self, "compiling"; {
-        let mut command = self.cargo_run();
-        command.arg("compile").arg(&relative_file);
-        self.run_and_capture_stdout_err(&mut command)?;
+        self.run_and_capture_stdout_err(&mut Command::new(hvmc).arg("compile").arg(&relative_file))?;
         fs::rename(file.with_extension(""), &binary)?;
       })?;
     }
@@ -138,14 +156,8 @@ impl Bencher {
     self.parse_output(&out)
   }
 
-  fn bench_interpreted(&self, file: &Path, multi: bool) -> Result<Stats> {
-    let file = {
-      let mut p = PathBuf::from("..");
-      p.push(file);
-      p
-    };
-
-    let mut command = self.cargo_run();
+  fn bench_interpreted(&self, hvmc: &Path, file: &Path, multi: bool) -> Result<Stats> {
+    let mut command = Command::new(hvmc);
     command.arg("run");
 
     if self.is_git_ancestor(REV_CLAP_CLI)? {
@@ -172,12 +184,6 @@ impl Bencher {
   fn git(&self) -> Command {
     let mut command = Command::new("git");
     command.current_dir(&self.core_dir);
-    command
-  }
-
-  fn cargo_run(&self) -> Command {
-    let mut command = Command::new("cargo");
-    command.current_dir(&self.core_dir).arg("run").arg("--release").arg("--");
     command
   }
 

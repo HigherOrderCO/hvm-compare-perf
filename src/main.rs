@@ -76,6 +76,8 @@ pub fn main() -> Result<()> {
       use std::io::Write;
       write!(&mut file, "{}", Datum::to_csv(&data))?;
 
+      eprintln!();
+
       std::io::stdout().write_all(pretty_print_data(data).as_slice()).unwrap();
     }
     CliCommand::Show { csv } => {
