@@ -1,1 +1,4 @@
 /target
+/bins
+/out
+/hvm-core
