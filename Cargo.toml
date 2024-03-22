@@ -9,5 +9,6 @@ chrono = "0.4.35"
 clap = { version = "4.5.3", features = ["derive", "string"] }
 fs-err = "2.11.0"
 regex = "1.10.3"
+termcolor = "1.4.1"
 thiserror = "1.0.58"
 wait-timeout = "0.2.0"

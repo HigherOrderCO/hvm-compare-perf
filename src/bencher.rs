@@ -9,7 +9,7 @@ pub struct Bencher {
   pub core_dir: PathBuf,
   pub bins_dir: PathBuf,
 
-  pub config: Config,
+  pub config: BenchConfig,
 
   pub reporter: Reporter,
 }
@@ -214,7 +214,7 @@ fn parse_time(time: &str) -> Result<f64> {
     .or_else(|| time.strip_suffix("ms").map(|x| (x, 1.0e-3)))
     .or_else(|| time.strip_suffix("s").map(|x| (x, 1.0)))
     .ok_or(Error::InvalidTime)?;
-  Ok(num.parse::<f64>()? * scale)
+  Ok(num.trim().parse::<f64>()? * scale)
 }
 
 fn parse_rwts(rwts: &str) -> Result<u64> {

@@ -23,4 +23,8 @@ pub enum Error {
   InvalidTime,
   #[error("missing rwts in hvmc output")]
   MissingRwts,
+  #[error("invalid csv")]
+  InvalidCsv,
+  #[error("invalid mode")]
+  InvalidMode,
 }

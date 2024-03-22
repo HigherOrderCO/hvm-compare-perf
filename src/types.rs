@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use super::*;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -29,6 +31,26 @@ impl ValueEnum for Mode {
   }
 }
 
+impl FromStr for Mode {
+  type Err = anyhow::Error;
+  fn from_str(s: &str) -> Result<Self> {
+    let (compiled, multi) = s.split_once('-').ok_or(Error::InvalidMode)?;
+    Ok(Mode {
+      compiled: match compiled {
+        "comp" => true,
+        "intr" => false,
+        _ => Err(Error::InvalidMode)?,
+      },
+      multi: match multi {
+        "multi" => true,
+        "singl" => false,
+        _ => Err(Error::InvalidMode)?,
+      },
+    })
+  }
+}
+
+#[derive(Debug)]
 pub struct Datum {
   pub rev: String,
   pub file: String,

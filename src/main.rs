@@ -4,7 +4,7 @@ use std::{
   cell::Cell,
   ffi::OsStr,
   fmt::{Display, Write},
-  io::Read,
+  io::{Read, Write as _},
   path::{Path, PathBuf},
   process::{Command, Stdio},
   sync::LazyLock,
@@ -16,11 +16,13 @@ use fs_err as fs;
 
 use anyhow::Result;
 use chrono::prelude::*;
-use clap::{builder::PossibleValue, Parser, ValueEnum};
+use clap::{builder::PossibleValue, Parser, Subcommand, ValueEnum};
 use regex::Regex;
 use thiserror::Error;
 
 mod bencher;
+mod csv;
+mod pretty;
 mod reporter;
 mod types;
 mod util;
@@ -30,8 +32,27 @@ use reporter::*;
 use types::*;
 use util::*;
 
+use crate::pretty::pretty_print_data;
+
+#[derive(Parser)]
+struct Cli {
+  #[command(subcommand)]
+  command: CliCommand,
+}
+
+#[derive(Subcommand, Debug)]
+enum CliCommand {
+  Bench {
+    #[command(flatten)]
+    config: BenchConfig,
+  },
+  Show {
+    csv: String,
+  },
+}
+
 #[derive(Parser, Debug)]
-struct Config {
+struct BenchConfig {
   #[arg(short = 'r', long = "rev")]
   revs: Vec<String>,
   #[arg(short = 'f', long = "file")]
@@ -41,36 +62,27 @@ struct Config {
 }
 
 pub fn main() -> Result<()> {
-  let mut state = Bencher {
-    core_dir: "./hvm-core".into(),
-    bins_dir: "./bins".into(),
-    config: Config::parse(),
-    reporter: Default::default(),
-  };
+  match Cli::parse().command {
+    CliCommand::Bench { config } => {
+      let mut state =
+        Bencher { core_dir: "./hvm-core".into(), bins_dir: "./bins".into(), config, reporter: Default::default() };
 
-  state.init()?;
+      state.init()?;
 
-  let output = state.bench_all()?;
+      let data = state.bench_all()?;
 
-  fs::create_dir_all("./out")?;
-  let mut file = File::create(format!("./out/{}.csv", Utc::now().format("%Y-%m-%d-%H-%M-%S")))?;
-  use std::io::Write;
-  write!(&mut file, "{}", Datum::to_csv(&output))?;
+      fs::create_dir_all("./out")?;
+      let mut file = File::create(format!("./out/{}.csv", Utc::now().format("%Y-%m-%d-%H-%M-%S")))?;
+      use std::io::Write;
+      write!(&mut file, "{}", Datum::to_csv(&data))?;
+
+      std::io::stdout().write_all(pretty_print_data(data).as_slice()).unwrap();
+    }
+    CliCommand::Show { csv } => {
+      let data = Datum::from_csv(&String::from_utf8(fs::read(csv)?)?)?;
+      std::io::stdout().write_all(pretty_print_data(data).as_slice()).unwrap();
+    }
+  }
 
   Ok(())
-}
-
-impl Datum {
-  fn to_csv(entries: &[Datum]) -> String {
-    let mut csv = "rev,file,mode,time,rwts\n".to_owned();
-    for entry in entries {
-      write!(csv, "{},{},{},", entry.rev, entry.file, entry.mode).unwrap();
-      match &entry.stats {
-        Some(stats) => write!(csv, "{},{}", stats.time, stats.rwts).unwrap(),
-        None => csv.push(','),
-      }
-      csv.push('\n');
-    }
-    csv
-  }
 }
