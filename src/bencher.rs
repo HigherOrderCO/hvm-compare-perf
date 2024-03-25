@@ -197,7 +197,10 @@ impl Bencher {
     if let Some(exit) = exit {
       stdout.unwrap().read_to_string(&mut output)?;
       stderr.unwrap().read_to_string(&mut output)?;
-      exit.exit_ok()?;
+      if let Err(err) = exit.exit_ok() {
+        self.reporter.message(format_args!("output: {}", output));
+        Err(err)?;
+      }
     } else {
       self.reporter.message("timeout");
       cmd.kill()?;
