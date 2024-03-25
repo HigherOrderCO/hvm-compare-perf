@@ -104,7 +104,7 @@ impl Bencher {
       report!(self, "building"; {
         self.run_and_capture_stdout_err(self.git().arg("checkout").arg(rev))?;
         self.run_and_capture_stdout_err(Command::new("cargo").current_dir(&self.core_dir).arg("build").arg("--release"))?;
-        fs::rename("./hvm-core/target/release/hvmc", &binary)?;
+        fs::rename(self.core_dir.join("target/release/hvmc"), &binary)?;
       })?;
     }
 
