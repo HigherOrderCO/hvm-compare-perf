@@ -59,31 +59,30 @@ impl Bencher {
   }
 
   fn bench_rev(&self, rev: &str, data: &mut Vec<Datum>) -> Result<()> {
-    self.git().arg("checkout").arg(rev).output()?;
-
     let count = self.config.files.len();
+
+    let hvmc = self.build(rev)?;
 
     for (i, file) in self.config.files.iter().enumerate() {
       let x = file.display();
       report!(self, "file {i}/{count}: {}", x; {
-        self.bench_rev_file(rev, &file, data)?;
+        self.bench_rev_file(&hvmc, rev, &file, data)?;
       })?;
     }
 
     Ok(())
   }
 
-  fn bench_rev_file(&self, rev: &str, file: &Path, data: &mut Vec<Datum>) -> Result<()> {
-    let hvmc = self.build(rev)?;
+  fn bench_rev_file(&self, hvmc: &Path, rev: &str, file: &Path, data: &mut Vec<Datum>) -> Result<()> {
     for &mode in &self.config.modes {
       let stats = if mode.compiled {
-        if let Ok(binary) = self.compile(rev, file, &hvmc) {
+        if let Ok(binary) = self.compile(rev, file, hvmc) {
           report!(self, "{}", mode; self.bench_compiled(&binary, mode.multi)?).ok()
         } else {
           None
         }
       } else {
-        report!(self, "{}", mode; self.bench_interpreted(&hvmc, file, mode.multi)?).ok()
+        report!(self, "{}", mode; self.bench_interpreted(hvmc, file, mode.multi)?).ok()
       };
       data.push(Datum {
         rev: rev.to_owned(),
@@ -103,6 +102,7 @@ impl Bencher {
     if !binary.exists() {
       fs::create_dir_all(binary.parent().unwrap())?;
       report!(self, "building"; {
+        self.run_and_capture_stdout_err(self.git().arg("checkout").arg(rev))?;
         self.run_and_capture_stdout_err(Command::new("cargo").current_dir(&self.core_dir).arg("build").arg("--release"))?;
         fs::rename("./hvm-core/target/release/hvmc", &binary)?;
       })?;
