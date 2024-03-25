@@ -74,7 +74,7 @@ impl Bencher {
   }
 
   fn bench_rev_file(&self, rev: &str, file: &Path, data: &mut Vec<Datum>) -> Result<()> {
-    let hvmc = self.build(rev, file)?;
+    let hvmc = self.build(rev)?;
     for &mode in &self.config.modes {
       let stats = if mode.compiled {
         if let Ok(binary) = self.compile(rev, file, &hvmc) {
@@ -95,13 +95,10 @@ impl Bencher {
     Ok(())
   }
 
-  fn build(&self, rev: &str, file: &Path) -> Result<PathBuf> {
+  fn build(&self, rev: &str) -> Result<PathBuf> {
     let mut binary = self.bins_dir.clone();
     binary.push(rev);
     binary.push("hvmc");
-
-    let mut relative_file = PathBuf::from("..");
-    relative_file.push(file);
 
     if !binary.exists() {
       fs::create_dir_all(binary.parent().unwrap())?;
@@ -120,13 +117,10 @@ impl Bencher {
     binary.push(file.file_name().unwrap());
     binary.set_extension("");
 
-    let mut relative_file = PathBuf::from("..");
-    relative_file.push(file);
-
     if !binary.exists() {
       fs::create_dir_all(binary.parent().unwrap())?;
       report!(self, "compiling"; {
-        self.run_and_capture_stdout_err(&mut Command::new(hvmc).arg("compile").arg(&relative_file))?;
+        self.run_and_capture_stdout_err(&mut Command::new(hvmc).arg("compile").arg(&file))?;
         fs::rename(file.with_extension(""), &binary)?;
       })?;
     }

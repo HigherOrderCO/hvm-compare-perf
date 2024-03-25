@@ -49,11 +49,10 @@ pub fn pretty_print_data(data: Vec<Datum>, buf: &mut impl WriteColor) {
       min_width: 0,
     }]
     .into_iter()
-    .chain(revs.iter().map(|x| Cell {
-      align: Align::Left,
-      style: Style::Header,
-      content: x.strip_prefix("compare-").unwrap_or(x)[0 .. REV_WIDTH].to_owned(),
-      min_width: REV_WIDTH,
+    .chain(revs.iter().map(|name| {
+      let name = name.strip_prefix("compare-").unwrap_or(name);
+      let name = &name[0 .. name.len().min(REV_WIDTH)];
+      Cell { align: Align::Left, style: Style::Header, content: name.to_owned(), min_width: REV_WIDTH }
     }))
     .collect(),
   ));
