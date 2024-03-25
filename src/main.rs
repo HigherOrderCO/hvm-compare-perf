@@ -44,6 +44,10 @@ struct Cli {
 #[derive(Subcommand, Debug)]
 enum CliCommand {
   Bench {
+    #[arg(long = "core", default_value = "./hvm-core")]
+    core_dir: PathBuf,
+    #[arg(long = "out", default_value = "./out")]
+    out_dir: PathBuf,
     #[command(flatten)]
     config: BenchConfig,
   },
@@ -64,9 +68,9 @@ struct BenchConfig {
 
 pub fn main() -> Result<()> {
   match Cli::parse().command {
-    CliCommand::Bench { config } => {
-      let mut state =
-        Bencher { core_dir: "./hvm-core".into(), bins_dir: "./bins".into(), config, reporter: Default::default() };
+    CliCommand::Bench { core_dir, out_dir, config } => {
+      let bins_dir = out_dir.join("bins");
+      let mut state = Bencher { core_dir, bins_dir, config, reporter: Default::default() };
 
       state.init()?;
 
