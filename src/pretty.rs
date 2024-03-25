@@ -1,6 +1,5 @@
 use crate::Datum;
-use std::io::Write;
-use termcolor::{Buffer, Color, ColorSpec, WriteColor};
+use termcolor::{Color, ColorSpec, WriteColor};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Align {
@@ -35,7 +34,7 @@ enum Row {
 
 const REV_WIDTH: usize = 12;
 
-pub fn pretty_print_data(data: Vec<Datum>) -> Buffer {
+pub fn pretty_print_data(data: Vec<Datum>, buf: &mut impl WriteColor) {
   let revs = collect_uniq(data.iter().map(|x| &x.rev));
   let files = collect_uniq(data.iter().map(|x| &x.file));
   let modes = collect_uniq(data.iter().map(|x| &x.mode));
@@ -103,10 +102,10 @@ pub fn pretty_print_data(data: Vec<Datum>) -> Buffer {
     }
   }
 
-  print_table(table)
+  print_table(table, buf);
 }
 
-fn print_table(table: Vec<Row>) -> Buffer {
+fn print_table(table: Vec<Row>, buf: &mut impl WriteColor) {
   let rows = table.iter().filter_map(|x| match x {
     Row::Cells(x) => Some(x),
     _ => None,
@@ -121,7 +120,6 @@ fn print_table(table: Vec<Row>) -> Buffer {
     .collect::<Vec<_>>();
   let gap_size = 2;
   let width = max_lengths.iter().copied().sum::<usize>() + (max_lengths.len() - 1) * gap_size;
-  let mut buf = Buffer::ansi();
   for row in table {
     match row {
       Row::Separator(char) => {
@@ -164,7 +162,6 @@ fn print_table(table: Vec<Row>) -> Buffer {
     }
     write!(buf, "\n").unwrap();
   }
-  buf
 }
 
 fn collect_uniq<'a, T: 'a + Eq + Clone>(iter: impl IntoIterator<Item = &'a T>) -> Vec<T> {

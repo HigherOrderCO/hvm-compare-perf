@@ -4,7 +4,7 @@ use std::{
   cell::Cell,
   ffi::OsStr,
   fmt::{Display, Write},
-  io::{Read, Write as _},
+  io::Read,
   path::{Path, PathBuf},
   process::{Command, Stdio},
   sync::LazyLock,
@@ -18,6 +18,7 @@ use anyhow::Result;
 use chrono::prelude::*;
 use clap::{builder::PossibleValue, Parser, Subcommand, ValueEnum};
 use regex::Regex;
+use termcolor::{ColorChoice, StandardStream};
 use thiserror::Error;
 
 mod bencher;
@@ -78,11 +79,11 @@ pub fn main() -> Result<()> {
 
       eprintln!();
 
-      std::io::stdout().write_all(pretty_print_data(data).as_slice()).unwrap();
+      pretty_print_data(data, &mut StandardStream::stdout(ColorChoice::Auto));
     }
     CliCommand::Show { csv } => {
       let data = Datum::from_csv(&String::from_utf8(fs::read(csv)?)?)?;
-      std::io::stdout().write_all(pretty_print_data(data).as_slice()).unwrap();
+      pretty_print_data(data, &mut StandardStream::stdout(ColorChoice::Auto));
     }
   }
 
