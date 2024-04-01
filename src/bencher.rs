@@ -128,7 +128,7 @@ impl Bencher {
     Ok(binary)
   }
 
-  fn bench_compiled(&self, rev: &str, binary: &Path, single: bool) -> Result<Stats> {
+  fn bench_compiled(&self, rev: &str, binary: &Path, multi: bool) -> Result<Stats> {
     let mut command = Command::new(&binary);
 
     // if ptr-refactor hasn't been implemented, pass dummy arg
@@ -138,7 +138,7 @@ impl Bencher {
 
     command.arg("-s");
 
-    if single {
+    if !multi {
       command.arg("-1");
     }
 
