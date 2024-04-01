@@ -77,12 +77,12 @@ impl Bencher {
     for &mode in &self.config.modes {
       let stats = if mode.compiled {
         if let Ok(binary) = self.compile(rev, file, hvmc) {
-          report!(self, "{}", mode; self.bench_compiled(&binary, mode.multi)?).ok()
+          report!(self, "{}", mode; self.bench_compiled(rev, &binary, mode.multi)?).ok()
         } else {
           None
         }
       } else {
-        report!(self, "{}", mode; self.bench_interpreted(hvmc, file, mode.multi)?).ok()
+        report!(self, "{}", mode; self.bench_interpreted(hvmc, rev, file, mode.multi)?).ok()
       };
       data.push(Datum {
         rev: rev.to_owned(),
@@ -128,11 +128,11 @@ impl Bencher {
     Ok(binary)
   }
 
-  fn bench_compiled(&self, binary: &Path, single: bool) -> Result<Stats> {
+  fn bench_compiled(&self, rev: &str, binary: &Path, single: bool) -> Result<Stats> {
     let mut command = Command::new(&binary);
 
     // if ptr-refactor hasn't been implemented, pass dummy arg
-    if !self.is_git_ancestor(REV_PTR_REFACTOR)? {
+    if !self.is_git_ancestor(rev, REV_PTR_REFACTOR)? {
       command.arg("_");
     }
 
@@ -142,7 +142,7 @@ impl Bencher {
       command.arg("-1");
     }
 
-    if self.is_git_ancestor(REV_CLAP_CLI)? {
+    if self.is_git_ancestor(rev, REV_CLAP_CLI)? {
       command.arg("-m").arg("4G");
     }
 
@@ -150,11 +150,11 @@ impl Bencher {
     self.parse_output(&out)
   }
 
-  fn bench_interpreted(&self, hvmc: &Path, file: &Path, multi: bool) -> Result<Stats> {
+  fn bench_interpreted(&self, hvmc: &Path, rev: &str, file: &Path, multi: bool) -> Result<Stats> {
     let mut command = Command::new(hvmc);
     command.arg("run");
 
-    if self.is_git_ancestor(REV_CLAP_CLI)? {
+    if self.is_git_ancestor(rev, REV_CLAP_CLI)? {
       command.arg("-m").arg("4G");
     }
 
@@ -181,8 +181,8 @@ impl Bencher {
     command
   }
 
-  fn is_git_ancestor(&self, ancestor: &str) -> Result<bool> {
-    Ok(self.git().arg("merge-base").arg("--is-ancestor").arg(ancestor).arg("HEAD").output()?.status.success())
+  fn is_git_ancestor(&self, rev: &str, ancestor: &str) -> Result<bool> {
+    Ok(self.git().arg("merge-base").arg("--is-ancestor").arg(ancestor).arg(rev).output()?.status.success())
   }
 
   fn run_and_capture_stdout_err(&self, command: &mut Command) -> Result<String> {
